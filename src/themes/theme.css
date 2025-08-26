@@ -1,0 +1,30 @@
+:root {
+  /* Colors */
+  --background: #fffdf5;
+  --foreground: #111111;
+  --primary: #e63946;
+  --primary-foreground: #ffffff;
+  --secondary: #ffb703;
+  --secondary-foreground: #111111;
+  --accent: #457b9d;
+  --accent-foreground: #ffffff;
+  --muted: #f1f1f1;
+  --muted-foreground: #666666;
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --border: #e0e0e0;
+
+  /* Typography */
+  --font-family: "Pacifico", cursive;
+  --heading-family: "Montserrat", sans-serif;
+
+  /* Radii */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+  --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+}
