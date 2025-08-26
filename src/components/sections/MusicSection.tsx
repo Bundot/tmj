@@ -191,20 +191,18 @@ export const MusicSection: React.FC = () => {
       releaseDate: '2024-11-20',
     },
     {
-      title: 'Unity',
+      title: 'My Woman',
       artists: ['TMJ', 'Afrobeats Collective'],
-      cover:
-        'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      cover: yawa,
       platforms: {
         spotify: 'https://spotify.com',
       },
       releaseDate: '2025-06-15',
     },
     {
-      title: 'Homeland',
+      title: 'Yawa',
       artists: ['TMJ'],
-      cover:
-        'https://images.unsplash.com/photo-1571974096035-bc3568627608?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80',
+      cover: yawa,
       platforms: {
         spotify: 'https://spotify.com',
         apple: 'https://music.apple.com',
