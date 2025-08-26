@@ -2,6 +2,14 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Section } from "../layout/Section";
 import { XIcon, ChevronLeft, ChevronRight } from "lucide-react";
+import tmj6 from "./../../assets/tmj6.jpeg";
+import tmj9 from "./../../assets/tmj9.jpeg";
+import tmj11 from "./../../assets/tmj11.jpeg";
+import tmj13 from "./../../assets/tmj13.jpeg";
+import tmj14 from "./../../assets/tmj14.jpeg";
+import tmj16 from "./../../assets/tmj16.jpeg";
+import tmj17 from "./../../assets/tmj17.jpeg";
+import tmj20 from '../../assets/tmj20.png';
 
 interface Photo {
   src: string;
@@ -158,15 +166,19 @@ const VideoEmbed: React.FC<{ video: Video; onClose: () => void }> = ({ video, on
 
 export const MediaSection: React.FC = () => {
   const photos: Photo[] = [
-    { src: "https://source.unsplash.com/random/800x600?concert,1", alt: "Live performance 1" },
-    { src: "https://source.unsplash.com/random/800x600?concert,2", alt: "Live performance 2" },
-    { src: "https://source.unsplash.com/random/800x600?concert,3", alt: "Live performance 3" },
-    { src: "https://source.unsplash.com/random/800x600?concert,4", alt: "Live performance 4" },
+    { src: tmj6, alt: "Live performance 1" },
+    { src: tmj9, alt: "Live performance 2" },
+    { src: tmj11, alt: "Live performance 3" },
+    { src: tmj13, alt: "Live performance 5" },
+    { src: tmj14, alt: "Live performance 6" },
+    { src: tmj16, alt: "Live performance 7" },
+    { src: tmj17, alt: "Live performance 8" },
+    { src: tmj20, alt: "Live performance 9" },
   ];
 
   const videos: Video[] = [
-    { embedUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ", title: "Music Video 1" },
-    { embedUrl: "https://www.youtube.com/embed/oHg5SJYRHA0", title: "Music Video 2" },
+    { embedUrl: "https://www.youtube.com/embed/hA1cn5QV4Tc?si=SDhJD3EOsdrt50Ck", title: "Yawa" },
+    { embedUrl: "https://www.youtube.com/embed/9KTmcqSpL9M?si=lJNyN8ZweCUdqN99", title: "Yawa LIve Performance" },
   ];
 
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number | null>(null);

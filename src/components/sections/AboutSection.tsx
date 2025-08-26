@@ -2,8 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Section } from '../layout/Section';
 import { QuoteIcon } from 'lucide-react';
-import TMJ04 from '../../assets/TMJ04.png';
-import tmj20 from '../../assets/tmj20.png';
+import tm from "./../../assets/tm.png";
 
 /**
  * PressQuote Component Props
@@ -49,7 +48,7 @@ export const AboutSection: React.FC = () => {
     name: 'TMJ',
     fullName: 'Tomide Joseph',
     origin: 'Osun State, Nigeria',
-    image: tmj20,
+    image: tm,
     bio: "Tomide Joseph, known professionally as TMJ, is a Nigerian singer-songwriter from Osun State whose music transcends conventional genres. Blending the rhythmic pulse of Afropop with the soulful depth of R&B and the cultural richness of traditional Juju music, TMJ creates a sound that is both innovative and deeply rooted in Nigerian heritage.\n\nRaised in a community where music was both celebration and commentary, TMJ developed an early understanding of music's power to inspire change. This perspective shapes his approach to songwriting, where catchy melodies serve as vehicles for messages of unity, resilience, and social awareness.",
     mission:
       'Through my music, I aim to bridge cultural divides while addressing the social issues that affect my community and beyond. Every song is an opportunity to celebrate our shared humanity while pushing for positive change.',
