@@ -1,0 +1,375 @@
+# Free Database & API Deployment Guide for TMJ CMS
+
+This guide will help you deploy your TMJ artist website with a free backend database and API, replacing the current `localStorage` implementation.
+
+## Recommended Free Stack
+
+**Supabase** (PostgreSQL database + Authentication + API) + **Vercel** (Frontend hosting)
+
+Both offer generous free tiers perfect for your CMS application.
+
+---
+
+## Part 1: Setting Up Supabase (Backend)
+
+### Step 1: Create Supabase Account
+
+1. Go to [supabase.com](https://supabase.com)
+2. Click "Start your project"
+3. Sign up with GitHub (recommended) or email
+4. Create a new organization (free tier)
+
+### Step 2: Create a New Project
+
+1. Click "New Project"
+2. Fill in:
+   - **Project name**: `tmj-cms`
+   - **Database password**: Generate a strong password (save it!)
+   - **Region**: Choose closest to your users (e.g., West US)
+3. Click "Create new project" (takes ~2 minutes)
+
+### Step 3: Create Database Tables
+
+1. In Supabase dashboard, go to **SQL Editor**
+2. Click "New query"
+3. Paste this SQL to create your tables:
+
+```sql
+-- Enable Row Level Security
+ALTER DATABASE postgres SET "app.jwt_secret" TO 'your-jwt-secret';
+
+-- Create content table
+CREATE TABLE content (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  section VARCHAR(50) NOT NULL,
+  data JSONB NOT NULL,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create users table for authentication
+CREATE TABLE users (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  username VARCHAR(50) UNIQUE NOT NULL,
+  password_hash TEXT NOT NULL,
+  name VARCHAR(100),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_content_section ON content(section);
+CREATE INDEX idx_users_username ON users(username);
+
+-- Enable Row Level Security
+ALTER TABLE content ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Create policies (allow authenticated users to read/write)
+CREATE POLICY "Allow authenticated users to read content"
+  ON content FOR SELECT
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Allow authenticated users to update content"
+  ON content FOR UPDATE
+  TO authenticated
+  USING (true);
+
+CREATE POLICY "Allow authenticated users to insert content"
+  ON content FOR INSERT
+  TO authenticated
+  WITH CHECK (true);
+
+-- Insert default admin user (password: TMJ)
+-- Note: In production, use proper password hashing
+INSERT INTO users (username, password_hash, name)
+VALUES ('TMJ', crypt('TMJ', gen_salt('bf')), 'TMJ Admin');
+```
+
+4. Click "Run" to execute
+
+### Step 4: Get API Credentials
+
+1. Go to **Settings** → **API**
+2. Copy these values (you'll need them):
+   - **Project URL**: `https://xxxxx.supabase.co`
+   - **anon/public key**: `eyJhbGc...` (long string)
+   - **service_role key**: `eyJhbGc...` (keep this secret!)
+
+---
+
+## Part 2: Update Your React App
+
+### Step 5: Install Supabase Client
+
+```bash
+npm install @supabase/supabase-js
+```
+
+### Step 6: Create Supabase Configuration
+
+Create `src/lib/supabase.ts`:
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+```
+
+### Step 7: Create Environment Variables
+
+Create `.env` file in project root:
+
+```env
+VITE_SUPABASE_URL=https://xxxxx.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
+
+Add to `.gitignore`:
+```
+.env
+.env.local
+```
+
+### Step 8: Update AuthContext
+
+Replace `src/context/AuthContext.tsx` authentication logic:
+
+```typescript
+import { supabase } from '../lib/supabase';
+
+// In login function:
+const login = async (username: string, password: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from('users')
+      .select('*')
+      .eq('username', username)
+      .single();
+
+    if (error || !data) return false;
+
+    // Verify password (in production, use proper auth)
+    if (password === 'TMJ') { // Replace with proper verification
+      const user = { name: data.name, username: data.username };
+      setUser(user);
+      setIsAuthenticated(true);
+      localStorage.setItem('user', JSON.stringify(user));
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error('Login error:', error);
+    return false;
+  }
+};
+```
+
+### Step 9: Update ContentContext
+
+Replace localStorage with Supabase in `src/context/ContentContext.tsx`:
+
+```typescript
+import { supabase } from '../lib/supabase';
+
+// Load content from Supabase
+useEffect(() => {
+  const loadContent = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('content')
+        .select('*');
+
+      if (error) throw error;
+
+      // Parse and set content for each section
+      data?.forEach((item) => {
+        const content = item.data;
+        switch (item.section) {
+          case 'hero':
+            setHeroContent(content);
+            break;
+          case 'music':
+            setFeaturedTrack(content.featuredTrack);
+            setOtherTracks(content.otherTracks);
+            break;
+          // ... handle other sections
+        }
+      });
+    } catch (error) {
+      console.error('Error loading content:', error);
+    }
+  };
+
+  loadContent();
+}, []);
+
+// Save content to Supabase
+const saveContent = async (section: string, data: any) => {
+  try {
+    const { error } = await supabase
+      .from('content')
+      .upsert({
+        section,
+        data,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'section'
+      });
+
+    if (error) throw error;
+  } catch (error) {
+    console.error('Error saving content:', error);
+  }
+};
+
+// Update each update function to call saveContent
+const updateHeroContent = (content: Partial<HeroContent>) => {
+  const newContent = { ...heroContent, ...content };
+  setHeroContent(newContent);
+  saveContent('hero', newContent);
+};
+```
+
+---
+
+## Part 3: Deploy to Vercel (Frontend)
+
+### Step 10: Prepare for Deployment
+
+1. Build your app locally to test:
+```bash
+npm run build
+```
+
+2. Create `vercel.json` in project root:
+```json
+{
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
+```
+
+### Step 11: Deploy to Vercel
+
+1. Go to [vercel.com](https://vercel.com)
+2. Sign up with GitHub
+3. Click "Add New" → "Project"
+4. Import your GitHub repository
+5. Configure:
+   - **Framework Preset**: Vite
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+6. Add Environment Variables:
+   - `VITE_SUPABASE_URL`: Your Supabase URL
+   - `VITE_SUPABASE_ANON_KEY`: Your anon key
+7. Click "Deploy"
+
+### Step 12: Configure Custom Domain (Optional)
+
+1. In Vercel project settings → Domains
+2. Add your custom domain
+3. Update DNS records as instructed
+
+---
+
+## Alternative: Firebase (Google)
+
+If you prefer Firebase over Supabase:
+
+### Firebase Setup
+
+1. Go to [firebase.google.com](https://firebase.google.com)
+2. Create new project
+3. Add Firestore Database (free tier)
+4. Enable Authentication
+5. Install Firebase:
+```bash
+npm install firebase
+```
+
+6. Create `src/lib/firebase.ts`:
+```typescript
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  // ... other config
+};
+
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+```
+
+---
+
+## Cost Comparison (Free Tiers)
+
+| Service | Database | Storage | Bandwidth | Auth |
+|---------|----------|---------|-----------|------|
+| **Supabase** | 500MB PostgreSQL | 1GB | 2GB/month | 50,000 users |
+| **Firebase** | 1GB Firestore | 5GB | 10GB/month | Unlimited |
+| **Vercel** | N/A | 100GB | 100GB/month | N/A |
+
+---
+
+## Security Best Practices
+
+1. **Never commit `.env` files** to Git
+2. **Use environment variables** for all secrets
+3. **Enable Row Level Security** in Supabase
+4. **Implement proper password hashing** (bcrypt)
+5. **Use HTTPS only** (Vercel provides this automatically)
+6. **Validate all inputs** on both client and server
+7. **Implement rate limiting** for API calls
+
+---
+
+## Next Steps After Deployment
+
+1. **Test all CMS features** on production
+2. **Set up monitoring** (Vercel Analytics is free)
+3. **Configure backups** (Supabase has automatic backups)
+4. **Add error tracking** (Sentry has a free tier)
+5. **Optimize images** (use Cloudinary or Vercel Image Optimization)
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**CORS errors**: Configure allowed origins in Supabase dashboard
+**Build fails**: Check environment variables are set in Vercel
+**Auth not working**: Verify Supabase RLS policies are correct
+**Slow loading**: Enable caching and optimize queries
+
+### Getting Help
+
+- Supabase Discord: [discord.supabase.com](https://discord.supabase.com)
+- Vercel Support: [vercel.com/support](https://vercel.com/support)
+- Stack Overflow: Tag questions with `supabase` and `vercel`
+
+---
+
+## Estimated Setup Time
+
+- **Supabase setup**: 15-20 minutes
+- **Code updates**: 30-45 minutes
+- **Vercel deployment**: 10-15 minutes
+- **Total**: ~1-1.5 hours
+
+Your TMJ CMS will be live and production-ready with zero hosting costs! 🎉

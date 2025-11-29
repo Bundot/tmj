@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import { useInViewSection } from '../../hooks/useInViewSection';
-import { MenuIcon, XIcon } from 'lucide-react';
+import { MenuIcon, XIcon, LogOutIcon, UserIcon } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Button } from '../ui/Button';
+
+import { navLinks } from '../../data/content';
 
 /**
  * Header Component
@@ -16,22 +21,11 @@ export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const activeSection = useInViewSection();
   const { scrollY } = useScroll();
+  const { isAuthenticated, user, logout } = useAuth();
 
   // Transform header background opacity based on scroll position
   const headerBgOpacity = useTransform(scrollY, [0, 50], [0, 1]);
   const headerShadowOpacity = useTransform(scrollY, [0, 50], [0, 0.1]);
-
-  // Define navigation links
-  const navLinks = [
-    { href: '#home', label: 'Home' },
-    { href: '#music', label: 'Music' },
-    { href: '#about', label: 'About' },
-    { href: '#events', label: 'Events' },
-    // { href: '#community', label: 'Community' },
-    { href: '#merch', label: 'Merch' },
-    { href: '#media', label: 'Media' },
-    { href: '#contact', label: 'Contact' }
-  ];
 
   // Close mobile menu when a link is clicked or when window is resized
   useEffect(() => {
@@ -86,16 +80,15 @@ export const Header: React.FC = () => {
       </motion.a>
 
       {/* Desktop Navigation */}
-      <nav className="hidden md:flex items-center space-x-1">
+      <nav className="hidden md:flex items-center space-x-6">
         <ul className="flex space-x-1">
           {navLinks.map((link) => (
             <li key={link.href}>
               <a
                 href={link.href}
                 onClick={(e) => handleNavClick(e, link.href)}
-                className={`relative px-3 py-2 text-sm rounded-md transition-colors hover:text-primary ${
-                  activeSection === link.href.substring(1) ? 'text-primary' : ''
-                }`}
+                className={`relative px-3 py-2 text-sm rounded-md transition-colors hover:text-primary ${activeSection === link.href.substring(1) ? 'text-primary' : ''
+                  }`}
                 aria-current={activeSection === link.href.substring(1) ? 'page' : undefined}
               >
                 {link.label}
@@ -115,6 +108,28 @@ export const Header: React.FC = () => {
             </li>
           ))}
         </ul>
+
+        {isAuthenticated ? (
+          <div className="flex items-center gap-4 border-l border-border pl-6">
+            <div className="flex items-center gap-2 text-sm font-medium text-primary">
+              <UserIcon size={16} />
+              <span>Welcome back, {user?.name}</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={logout}>
+              <LogOutIcon size={16} className="mr-2" />
+              Logout
+            </Button>
+          </div>
+        ) : (
+          <div className="border-l border-border pl-6">
+            <Link to="/login">
+              <Button variant="primary" size="sm">
+                <UserIcon size={16} className="mr-2" />
+                Login
+              </Button>
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* Mobile Navigation Toggle */}
@@ -136,8 +151,8 @@ export const Header: React.FC = () => {
         animate={{ opacity: isMenuOpen ? 1 : 0, x: isMenuOpen ? 0 : '100%' }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
       >
-        <nav className="flex flex-col p-4">
-          <ul className="space-y-4">
+        <nav className="flex flex-col p-4 h-full">
+          <ul className="space-y-4 mb-8">
             {navLinks.map((link) => (
               <motion.li
                 key={link.href}
@@ -147,9 +162,8 @@ export const Header: React.FC = () => {
                 <a
                   href={link.href}
                   onClick={(e) => handleNavClick(e, link.href)}
-                  className={`block px-3 py-2 text-lg ${
-                    activeSection === link.href.substring(1) ? 'text-primary font-medium' : ''
-                  }`}
+                  className={`block px-3 py-2 text-lg ${activeSection === link.href.substring(1) ? 'text-primary font-medium' : ''
+                    }`}
                   aria-current={activeSection === link.href.substring(1) ? 'page' : undefined}
                 >
                   {link.label}
@@ -157,6 +171,28 @@ export const Header: React.FC = () => {
               </motion.li>
             ))}
           </ul>
+
+          {isAuthenticated ? (
+            <div className="mt-auto border-t border-border pt-6">
+              <div className="flex items-center gap-2 text-lg font-medium text-primary mb-4">
+                <UserIcon size={20} />
+                <span>Welcome back, {user?.name}</span>
+              </div>
+              <Button fullWidth variant="outline" onClick={logout}>
+                <LogOutIcon size={18} className="mr-2" />
+                Logout
+              </Button>
+            </div>
+          ) : (
+            <div className="mt-auto border-t border-border pt-6">
+              <Link to="/login">
+                <Button fullWidth variant="primary">
+                  <UserIcon size={18} className="mr-2" />
+                  Login
+                </Button>
+              </Link>
+            </div>
+          )}
         </nav>
       </motion.div>
     </motion.header>
