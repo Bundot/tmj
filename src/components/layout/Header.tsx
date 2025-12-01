@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { useInViewSection } from '../../hooks/useInViewSection';
 import { MenuIcon, XIcon, LogOutIcon, UserIcon } from 'lucide-react';
@@ -20,14 +20,9 @@ import { navLinks } from '../../data/content';
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const activeSection = useInViewSection();
-  const { scrollY } = useScroll();
   const { isAuthenticated, user, logout } = useAuth();
 
-  // Transform header background opacity based on scroll position
-  const headerBgOpacity = useTransform(scrollY, [0, 50], [0, 1]);
-  const headerShadowOpacity = useTransform(scrollY, [0, 50], [0, 0.1]);
-
-  // Close mobile menu when a link is clicked or when window is resized
+  // Close mobile menu when resizing to desktop width
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth >= 768) {
@@ -41,7 +36,7 @@ export const Header: React.FC = () => {
   // Toggle mobile menu
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
-  // Handle smooth scrolling to section when nav link is clicked
+  // Smooth scroll to section
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
     e.preventDefault();
     const targetElement = document.querySelector(href);
@@ -53,14 +48,14 @@ export const Header: React.FC = () => {
 
   return (
     <motion.header
-      className="fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-4 flex items-center justify-between"
+      className="fixed top-0 left-0 right-0 z-50 px-4 md:px-6 py-4 flex items-center justify-between bg-transparent shadow-none"
       style={{
-        backgroundColor: `rgba(var(--color-background-rgb), ${headerBgOpacity.get()})`,
-        backdropFilter: 'blur(8px)',
-        boxShadow: `0 1px 3px rgba(0, 0, 0, ${headerShadowOpacity.get()})`
+        backgroundColor: 'transparent',
+        boxShadow: 'none',
+        backdropFilter: 'none'
       }}
     >
-      {/* Skip to main content link for accessibility */}
+      {/* Skip to main content link */}
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-primary text-primary-foreground px-4 py-2 rounded-md z-50"
@@ -68,7 +63,7 @@ export const Header: React.FC = () => {
         Skip to main content
       </a>
 
-      {/* Logo/Brand */}
+      {/* Logo */}
       <motion.a
         href="#home"
         className="text-xl font-bold"
@@ -97,11 +92,7 @@ export const Header: React.FC = () => {
                     layoutId="activeSection"
                     className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
                     initial={false}
-                    transition={{
-                      type: 'spring',
-                      stiffness: 380,
-                      damping: 30
-                    }}
+                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                   />
                 )}
               </a>
@@ -122,17 +113,12 @@ export const Header: React.FC = () => {
           </div>
         ) : (
           <div className="border-l border-border pl-6">
-            <Link to="/login">
-              <Button variant="primary" size="sm">
-                <UserIcon size={16} className="mr-2" />
-                Login
-              </Button>
-            </Link>
+            {/* Login button if needed */}
           </div>
         )}
       </nav>
 
-      {/* Mobile Navigation Toggle */}
+      {/* Mobile Nav Toggle */}
       <div className="flex items-center md:hidden">
         <button
           className="ml-2 p-2 rounded-md hover:bg-muted"
@@ -144,9 +130,10 @@ export const Header: React.FC = () => {
         </button>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Slide-In Menu */}
       <motion.div
-        className={`fixed inset-0 top-[68px] z-40 bg-background md:hidden ${isMenuOpen ? 'block' : 'hidden'}`}
+        className={`fixed inset-0 top-[68px] z-40 bg-background md:hidden ${isMenuOpen ? 'block' : 'hidden'
+          }`}
         initial={{ opacity: 0, x: '100%' }}
         animate={{ opacity: isMenuOpen ? 1 : 0, x: isMenuOpen ? 0 : '100%' }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
@@ -154,11 +141,7 @@ export const Header: React.FC = () => {
         <nav className="flex flex-col p-4 h-full">
           <ul className="space-y-4 mb-8">
             {navLinks.map((link) => (
-              <motion.li
-                key={link.href}
-                whileHover={{ x: 5 }}
-                transition={{ duration: 0.2 }}
-              >
+              <motion.li key={link.href} whileHover={{ x: 5 }} transition={{ duration: 0.2 }}>
                 <a
                   href={link.href}
                   onClick={(e) => handleNavClick(e, link.href)}
@@ -185,12 +168,7 @@ export const Header: React.FC = () => {
             </div>
           ) : (
             <div className="mt-auto border-t border-border pt-6">
-              <Link to="/login">
-                <Button fullWidth variant="primary">
-                  <UserIcon size={18} className="mr-2" />
-                  Login
-                </Button>
-              </Link>
+              {/* Login button if needed */}
             </div>
           )}
         </nav>
