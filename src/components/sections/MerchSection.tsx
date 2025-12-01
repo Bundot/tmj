@@ -466,17 +466,25 @@ export const MerchSection: React.FC = () => {
           <EditOverlay onEdit={() => setIsEditModalOpen(true)} label="Edit Merch">
             {/* Merchandise Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {merchItems.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: 0.1 * (index % 3) }}
-                >
-                  <MerchCard item={item} onAddToCart={addToCart} />
-                </motion.div>
-              ))}
+              {merchItems.length === 0 ? (
+                <div className="col-span-full py-12 text-center border-2 border-dashed border-border rounded-lg bg-muted/30">
+                  <ShoppingBagIcon size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground font-medium">No merchandise items yet.</p>
+                  <p className="text-sm text-muted-foreground mt-1">Click to add your first item.</p>
+                </div>
+              ) : (
+                merchItems.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.1 * (index % 3) }}
+                  >
+                    <MerchCard item={item} onAddToCart={addToCart} />
+                  </motion.div>
+                ))
+              )}
             </div>
           </EditOverlay>
 

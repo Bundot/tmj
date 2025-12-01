@@ -40,6 +40,18 @@ export function App() {
         <ContactSection />
       </main>
       <Footer />
+      {/* Seed Button for Admin - Only visible when authenticated */}
+      <SeedButtonWrapper />
     </div>
   );
 }
+
+// Wrapper to conditionally render SeedButton
+import { useAuth } from './context/AuthContext';
+import { SeedButton } from './components/admin/SeedButton';
+
+const SeedButtonWrapper = () => {
+  const { isAuthenticated } = useAuth();
+  if (!isAuthenticated) return null;
+  return <SeedButton />;
+};

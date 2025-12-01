@@ -316,27 +316,57 @@ const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     // Hero State
-    const [heroContent, setHeroContent] = useState<HeroContent>(initialHeroContent);
+    const [heroContent, setHeroContent] = useState<HeroContent>({
+        title: '',
+        tagline: '',
+        cta: '',
+        backgroundImage: ''
+    });
 
     // Music State
-    const [featuredTrack, setFeaturedTrack] = useState<Track>(initialFeaturedTrack);
-    const [otherTracks, setOtherTracks] = useState<Track[]>(initialOtherTracks);
+    const [featuredTrack, setFeaturedTrack] = useState<Track>({
+        title: '',
+        artists: [],
+        cover: '',
+        platforms: {}
+    });
+    const [otherTracks, setOtherTracks] = useState<Track[]>([]);
 
     // About State
-    const [aboutContent, setAboutContent] = useState<AboutContent>(initialAboutContent);
+    const [aboutContent, setAboutContent] = useState<AboutContent>({
+        name: '',
+        fullName: '',
+        origin: '',
+        image: '',
+        bio: '',
+        mission: '',
+        pressQuotes: []
+    });
 
     // Merch State
-    const [merchItems, setMerchItems] = useState<MerchItem[]>(initialMerchItems);
+    const [merchItems, setMerchItems] = useState<MerchItem[]>([]);
 
     // Media State
-    const [photos, setPhotos] = useState<Photo[]>(initialPhotos);
-    const [videos, setVideos] = useState<Video[]>(initialVideos);
+    const [photos, setPhotos] = useState<Photo[]>([]);
+    const [videos, setVideos] = useState<Video[]>([]);
 
     // Contact State
-    const [contactContent, setContactContent] = useState<ContactContent>(initialContactContent);
+    const [contactContent, setContactContent] = useState<ContactContent>({
+        email: '',
+        phone: '',
+        location: ''
+    });
 
     // Events State
-    const [eventsContent, setEventsContent] = useState<EventsContent>(initialEventsContent);
+    const [eventsContent, setEventsContent] = useState<EventsContent>({
+        upcomingEvents: [],
+        pastEvents: [],
+        tourInfo: {
+            title: '',
+            locations: '',
+            mapImage: ''
+        }
+    });
 
     // Load from Supabase on mount
     useEffect(() => {

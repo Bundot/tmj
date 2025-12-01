@@ -113,7 +113,7 @@ export const Header: React.FC = () => {
           <div className="flex items-center gap-4 border-l border-border pl-6">
             <div className="flex items-center gap-2 text-sm font-medium text-primary">
               <UserIcon size={16} />
-              <span>Welcome back, {user?.name}</span>
+              <span>Welcome back, {user?.email}</span>
             </div>
             <Button variant="ghost" size="sm" onClick={logout}>
               <LogOutIcon size={16} className="mr-2" />
@@ -176,7 +176,7 @@ export const Header: React.FC = () => {
             <div className="mt-auto border-t border-border pt-6">
               <div className="flex items-center gap-2 text-lg font-medium text-primary mb-4">
                 <UserIcon size={20} />
-                <span>Welcome back, {user?.name}</span>
+                <span>Welcome back, {user?.email}</span>
               </div>
               <Button fullWidth variant="outline" onClick={logout}>
                 <LogOutIcon size={18} className="mr-2" />

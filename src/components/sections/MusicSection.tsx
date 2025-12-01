@@ -174,7 +174,7 @@ export const MusicSection: React.FC = () => {
                 <label className="block text-sm font-medium mb-1">Artists (comma separated)</label>
                 <input
                   type="text"
-                  value={editFeatured.artists.join(', ')}
+                  value={editFeatured.artists?.join(', ') || ''}
                   onChange={(e) => handleArtistsChange(e.target.value, true)}
                   className="w-full p-2 rounded-md bg-input border border-border focus:ring-2 focus:ring-primary outline-none"
                 />
@@ -234,7 +234,7 @@ export const MusicSection: React.FC = () => {
                       <label className="block text-sm font-medium mb-1">Artists</label>
                       <input
                         type="text"
-                        value={track.artists.join(', ')}
+                        value={track.artists?.join(', ') || ''}
                         onChange={(e) => handleArtistsChange(e.target.value, false, index)}
                         className="w-full p-2 rounded-md bg-input border border-border focus:ring-2 focus:ring-primary outline-none"
                       />

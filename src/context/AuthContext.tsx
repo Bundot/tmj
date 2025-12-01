@@ -2,15 +2,15 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { supabase } from '../lib/supabase';
 
 interface User {
-    username: string;
-    name: string;
+    email: string;
+    id: string;
 }
 
 interface AuthContextType {
     isAuthenticated: boolean;
     user: User | null;
-    login: (username: string, password: string) => Promise<boolean>;
-    logout: () => void;
+    login: (email: string, password: string) => Promise<boolean>;
+    logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,59 +20,51 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const [user, setUser] = useState<User | null>(null);
 
     useEffect(() => {
-        // Check localStorage for persisted session
-        const storedAuth = localStorage.getItem('tmj-auth');
-        if (storedAuth) {
-            const { isAuthenticated, user } = JSON.parse(storedAuth);
-            if (isAuthenticated) {
+        // Check active session
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            if (session?.user) {
+                setUser({ email: session.user.email!, id: session.user.id });
                 setIsAuthenticated(true);
-                setUser(user);
             }
-        }
+        });
+
+        // Listen for auth changes
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                setUser({ email: session.user.email!, id: session.user.id });
+                setIsAuthenticated(true);
+            } else {
+                setUser(null);
+                setIsAuthenticated(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
-    const login = async (username: string, password: string): Promise<boolean> => {
-        console.log('🔐 LOGIN ATTEMPT:');
-        console.log('Username:', username);
-        console.log('Password:', password);
-
+    const login = async (email: string, password: string): Promise<boolean> => {
         try {
-            const { data, error } = await supabase
-                .from('users')
-                .select('*')
-                .eq('username', username)
-                .single();
+            const { error } = await supabase.auth.signInWithPassword({
+                email,
+                password,
+            });
 
-            console.log('📊 Supabase Response:');
-            console.log('Data:', data);
-            console.log('Error:', error);
-
-            if (error || !data) {
-                console.error('❌ Login error:', error);
+            if (error) {
+                console.error('Login error:', error.message);
                 return false;
             }
 
-            // Verify password (in production, use proper bcrypt verification)
-            if (password === 'TMJ') { // Replace with proper password verification
-                const user = { name: data.name, username: data.username };
-                setUser(user);
-                setIsAuthenticated(true);
-                localStorage.setItem('tmj-auth', JSON.stringify({ isAuthenticated: true, user }));
-                console.log('✅ Login successful!');
-                return true;
-            }
-            console.log('❌ Password mismatch');
-            return false;
+            return true;
         } catch (error) {
-            console.error('❌ Login error:', error);
+            console.error('Login error:', error);
             return false;
         }
     };
 
-    const logout = () => {
-        setIsAuthenticated(false);
-        setUser(null);
-        localStorage.removeItem('tmj-auth');
+    const logout = async () => {
+        await supabase.auth.signOut();
     };
 
     return (
