@@ -3,16 +3,18 @@ name: Deploy to Hostinger
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
       
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -26,10 +28,41 @@ jobs:
     - name: Build project
       run: npm run build
       env:
-        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON }}
         
-    - name: Sync files to Hostinger
+    - name: Prepare hostinger-build branch
+      run: |
+        # Configure Git
+        git config --global user.name "TMJ Deploy Bot"
+        git config --global user.email "deploy-bot@example.com"
+        
+        # Create a temporary directory for the build output
+        mkdir -p temp_dist
+        cp -r dist/* temp_dist/
+        
+        # Switch to hostinger-build branch (create if doesn't exist)
+        git checkout -B hostinger-build
+        
+        # Copy the built files from temp_dist to root
+        cp -r temp_dist/* .
+        rm -rf temp_dist
+        
+        # Ensure .htaccess from hostinger-htaccess.txt is used
+        if [ -f "hostinger-htaccess.txt" ]; then
+          cp hostinger-htaccess.txt .htaccess
+        fi
+        
+        # Add all files (source + root build)
+        git add .
+        
+        # Commit changes
+        git commit -m "chore: deploy build $(date +'%Y-%m-%d %H:%M:%S')" || echo "No changes to commit"
+        
+        # Force push to hostinger-build
+        git push origin hostinger-build --force
+
+    - name: Sync files to Hostinger via FTP (Secondary)
       uses: SamKirkland/FTP-Deploy-Action@4.3.0
       with:
         server: ${{ secrets.FTP_SERVER }}
@@ -38,14 +71,3 @@ jobs:
         local-dir: ./dist/
         server-dir: /public_html/
         exclude: ""
-        
-    - name: Upload .htaccess
-      uses: SamKirkland/FTP-Deploy-Action@4.3.0
-      with:
-        server: ${{ secrets.FTP_SERVER }}
-        username: ${{ secrets.FTP_USERNAME }}
-        password: ${{ secrets.FTP_PASSWORD }}
-        local-dir: ./
-        server-dir: /public_html/
-        files: "hostinger-htaccess.txt"
-        exclude: "*"
