@@ -63,8 +63,8 @@ jobs:
           for html_file in deploy/*.html; do
               if [ -f "$html_file" ]; then
                   echo "📝 Processing $html_file..."
-                  # Add env-inject.js before other scripts
-                  sed -i 's|<script type="module" src="|<script src="env-inject.js"></script>\n    <script type="module" src="|g' "$html_file"
+                  # Add env-inject.js before the main React script
+                  sed -i 's|<script type="module" crossorigin src="./assets/|<script src="env-inject.js"></script>\n  <script type="module" crossorigin src="./assets/|g' "$html_file"
               fi
           done
           
