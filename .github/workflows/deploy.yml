@@ -2,151 +2,50 @@ name: Deploy to Hostinger
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-          
-      - name: Install dependencies
-        run: npm ci
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
         
-      - name: Build project
-        run: npm run build
-        env:
-          VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON }}
-          
-      - name: Prepare Deployment Directory
-        run: |
-          # Create clean deploy directory
-          mkdir -p deploy
-          
-          echo "📂 Listing dist files:"
-          ls -la dist/
-          
-          # Create env-inject.js
-          cat > deploy/env-inject.js << EOF
-          // Environment Variables for Hostinger Deployment (Injected via CI/CD)
-          window.SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';
-          window.SUPABASE_ANON = '${{ secrets.SUPABASE_ANON }}';
-          window.SUPABASE_SERVICE_KEY = '${{ secrets.SUPABASE_SERVICE_KEY }}';
-          window.NODE_ENV = 'production';
-          window.ENABLE_CONSOLE_LOGS = '${{ secrets.ENABLE_CONSOLE_LOGS }}';
-          
-          console.log('🌍 Environment variables injected for Hostinger');
-          EOF
-          
-          # Copy built files from dist to deploy
-          echo "� Copying built files..."
-          cp -r dist/* deploy/
-          
-          # Copy additional scripts
-          cp secure-storage.js deploy/ 2>/dev/null || true
-          cp config-loader.js deploy/ 2>/dev/null || true
-          cp security-validator.js deploy/ 2>/dev/null || true
-          
-          # Process HTML files to inject env-inject.js
-          for html_file in deploy/*.html; do
-              if [ -f "$html_file" ]; then
-                  echo "📝 Processing $html_file..."
-                  # Add env-inject.js before the main React script
-                  sed -i 's|<script type="module" crossorigin src="./assets/|<script src="env-inject.js"></script>\n  <script type="module" crossorigin src="./assets/|g' "$html_file"
-              fi
-          done
-          
-          # Create config directory and supabase.js
-          mkdir -p deploy/config
-          cp deploy/env-inject.js deploy/config/supabase.js
-          
-          # Create .htaccess for Hostinger
-          echo "📝 Creating .htaccess..."
-          cat > deploy/.htaccess << 'EOF'
-          # Force HTTPS
-          RewriteEngine On
-          RewriteCond %{HTTPS} off
-          RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-          
-          # Handle React Router
-          RewriteRule ^index\.html$ - [L]
-          RewriteCond %{REQUEST_FILENAME} !-f
-          RewriteCond %{REQUEST_FILENAME} !-d
-          RewriteRule . /index.html [L]
-          
-          # Security Headers
-          <IfModule mod_headers.c>
-              Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://rmcphwbwhyfkejlpqbpt.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
-              Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-              Header set X-Frame-Options "DENY"
-              Header set X-Content-Type-Options "nosniff"
-              Header set X-XSS-Protection "1; mode=block"
-              Header set Referrer-Policy "strict-origin-when-cross-origin"
-              Header set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
-          </IfModule>
-          EOF
-
-      - name: Debug - List Files
-        run: |
-          echo "🔍 Contents of the deploy folder:"
-          ls -R deploy/
-
-      - name: Deploy to Branch for Hostinger (Primary Method)
-        uses: JamesIves/github-pages-deploy-action@v4.5.0
-        with:
-          branch: hostinger-build 
-          folder: deploy
-          commit-message: "Deploy production build for Hostinger"
-
-      - name: FTP Deploy to Hostinger (Fallback Method)
-        run: |
-          echo "🚀 Starting optimized FTP deployment to Hostinger..."
-          
-          # Install lftp for more reliable FTP transfers
-          sudo apt-get update -qq && sudo apt-get install -y lftp
-          
-          # Create optimized FTP script
-          cat > ftp_script.sh << 'EOF'
-          set ftp:ssl-allow no
-          set ftp:passive-mode on
-          set ftp:list-options -a
-          set cmd:fail-exit true
-          set net:timeout 10
-          set net:max-retries 3
-          set net:reconnect-interval-base 5
-          
-          open ${{ secrets.FTP_SERVER }}
-          user ${{ secrets.FTP_USERNAME }} ${{ secrets.FTP_PASSWORD }}
-          
-          # Navigate to correct public_html directory
-          cd domains/tmjworld.ng/public_html
-          
-          # Upload files with optimized settings
-          mirror -R --delete --parallel=5 --only-newer --verbose ./deploy/ ./
-          
-          # Set permissions only on new files
-          find ./ -type d -exec chmod 755 {} \; 2>/dev/null || true
-          find ./ -type f -exec chmod 644 {} \; 2>/dev/null || true
-          
-          quit
-          EOF
-          
-          # Execute FTP script with timeout
-          timeout 300 lftp -f ftp_script.sh || {
-            echo "⚠️ FTP deployment timed out or failed, but branch deployment should work"
-            exit 0
-          }
-          
-          echo "✅ FTP deployment completed successfully!"
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build project
+      run: npm run build
+      env:
+        VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        
+    - name: Sync files to Hostinger
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./dist/
+        server-dir: /public_html/
+        exclude: ""
+        
+    - name: Upload .htaccess
+      uses: SamKirkland/FTP-Deploy-Action@4.3.0
+      with:
+        server: ${{ secrets.FTP_SERVER }}
+        username: ${{ secrets.FTP_USERNAME }}
+        password: ${{ secrets.FTP_PASSWORD }}
+        local-dir: ./
+        server-dir: /public_html/
+        files: "hostinger-htaccess.txt"
+        exclude: "*"

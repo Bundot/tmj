@@ -9,8 +9,8 @@ import { config } from 'dotenv';
 
 config({ path: '.env.production' });
 
-const url = process.env.SUPABASE_URL || '';
-const anon = process.env.SUPABASE_ANON || '';
+const url = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
+const anon = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON || '';
 const serviceKey = process.env.SUPABASE_SERVICE_KEY || '';
 
 if (!url || !anon) {

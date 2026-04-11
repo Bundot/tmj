@@ -116,6 +116,7 @@ interface ContentContextType {
 
     // Placeholder for other sections we'll implement later
     resetContent: () => void;
+    loading: boolean;
 }
 
 const initialMerchItems: MerchItem[] = [
@@ -315,6 +316,7 @@ const initialEventsContent: EventsContent = {
 const ContentContext = createContext<ContentContextType | undefined>(undefined);
 
 export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const [loading, setLoading] = useState(true);
     // Hero State
     const [heroContent, setHeroContent] = useState<HeroContent>({
         title: '',
@@ -377,26 +379,7 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
                     .select('*');
 
                 if (error) {
-                    console.error('Error loading content from Supabase:', error);
-                    // Fall back to localStorage if Supabase fails
-                    const savedContent = localStorage.getItem('tmj-content');
-                    if (savedContent) {
-                        const parsed = JSON.parse(savedContent);
-                        if (parsed.heroContent) setHeroContent(parsed.heroContent);
-                        if (parsed.musicContent) {
-                            setFeaturedTrack(parsed.musicContent.featuredTrack);
-                            setOtherTracks(parsed.musicContent.otherTracks);
-                        }
-                        if (parsed.aboutContent) setAboutContent(parsed.aboutContent);
-                        if (parsed.merchItems) setMerchItems(parsed.merchItems);
-                        if (parsed.mediaContent) {
-                            setPhotos(parsed.mediaContent.photos);
-                            setVideos(parsed.mediaContent.videos);
-                        }
-                        if (parsed.contactContent) setContactContent(parsed.contactContent);
-                        if (parsed.eventsContent) setEventsContent(parsed.eventsContent);
-                    }
-                    return;
+                    throw error;
                 }
 
                 // Parse and set content for each section
@@ -430,6 +413,30 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
                 });
             } catch (error) {
                 console.error('Error loading content:', error);
+                // Fallback to localStorage on any error
+                const savedContent = localStorage.getItem('tmj-content');
+                if (savedContent) {
+                    try {
+                        const parsed = JSON.parse(savedContent);
+                        if (parsed.heroContent) setHeroContent(parsed.heroContent);
+                        if (parsed.musicContent) {
+                            setFeaturedTrack(parsed.musicContent.featuredTrack || initialFeaturedTrack);
+                            setOtherTracks(parsed.musicContent.otherTracks || initialOtherTracks);
+                        }
+                        if (parsed.aboutContent) setAboutContent(parsed.aboutContent || initialAboutContent);
+                        if (parsed.merchItems) setMerchItems(parsed.merchItems || initialMerchItems);
+                        if (parsed.mediaContent) {
+                            setPhotos(parsed.mediaContent.photos || initialPhotos);
+                            setVideos(parsed.mediaContent.videos || initialVideos);
+                        }
+                        if (parsed.contactContent) setContactContent(parsed.contactContent || initialContactContent);
+                        if (parsed.eventsContent) setEventsContent(parsed.eventsContent || initialEventsContent);
+                    } catch (parseErr) {
+                        console.error('Error parsing cached content:', parseErr);
+                    }
+                }
+            } finally {
+                setLoading(false);
             }
         };
 
@@ -561,7 +568,8 @@ export const ContentProvider: React.FC<{ children: ReactNode }> = ({ children })
             updateContactContent,
             eventsContent,
             updateEventsContent,
-            resetContent
+            resetContent,
+            loading
         }}>
             {children}
         </ContentContext.Provider>

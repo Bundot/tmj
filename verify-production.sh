@@ -1,8 +1,8 @@
 #!/bin/bash
 echo "🔍 Verifying TMJ production build security..."
 
-# Check for hardcoded credentials (exclude dev-env.js as it's for development)
-if grep -r "SUPABASE_URL.*https" --include="*.html" --include="*.js" . | grep -v "config/supabase.prod.js" | grep -v "dev-env.js"; then
+# Check for hardcoded credentials
+if grep -r "SUPABASE_URL.*https" --include="*.html" --include="*.js" . | grep -v "config/supabase.prod.js"; then
     echo "❌ Found hardcoded credentials in source files!"
     exit 1
 fi
