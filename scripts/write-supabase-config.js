@@ -3,10 +3,11 @@
 // This file is intended to be created at build time (CI / Vercel) using environment variables
 // and must NOT be committed. Add it to .gitignore.
 
-require('dotenv').config({ path: '.env.production' });
+import fs from 'fs';
+import path from 'path';
+import { config } from 'dotenv';
 
-const fs = require('fs');
-const path = require('path');
+config({ path: '.env.production' });
 
 const url = process.env.SUPABASE_URL || '';
 const anon = process.env.SUPABASE_ANON || '';
