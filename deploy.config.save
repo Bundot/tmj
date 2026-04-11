@@ -1,0 +1,12 @@
+# TMJ Deployment Configuration
+# Update these values with your actual Hostinger details
+
+HOSTINGER_HOST="141.136.43.188"
+HOSTINGER_USER="u684694186"
+HOSTINGER_PATH="HOSTINGER_PATH="/home/u684694286/public_html""
+SSH_KEY="$HOME/.ssh/hostinger_deploy"
+
+# Deployment settings
+AUTO_DEPLOY_ON_PUSH=true
+DEPLOY_BRANCH="main"
+BACKUP_BEFORE_DEPLOY=true

@@ -1,0 +1,99 @@
+name: Deploy to Hostinger
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Prepare Deployment Directory
+        run: |
+          # Create clean deploy directory
+          mkdir -p deploy
+          
+          echo "📂 Listing workspace files:"
+          ls -la
+          
+          # Create env-inject.js
+          cat > deploy/env-inject.js << EOF
+          // Environment Variables for Hostinger Deployment (Injected via CI/CD)
+          window.SUPABASE_URL = '${{ secrets.SUPABASE_URL }}';
+          window.SUPABASE_ANON = '${{ secrets.SUPABASE_ANON }}';
+          window.SUPABASE_SERVICE_KEY = '${{ secrets.SUPABASE_SERVICE_KEY }}';
+          window.NODE_ENV = 'production';
+          window.ENABLE_CONSOLE_LOGS = '${{ secrets.ENABLE_CONSOLE_LOGS }}';
+          
+          console.log('🌍 Environment variables injected for Hostinger');
+          EOF
+          
+          # Process HTML files
+          for html_file in *.html; do
+              if [ -f "$html_file" ]; then
+                  echo "📝 Processing $html_file..."
+                  sed 's/dev-env\.js/env-inject.js/g' "$html_file" > "deploy/$html_file"
+              fi
+          done
+          
+          # Copy assets and scripts
+          echo "📂 Copying assets and styles..."
+          [ -d "assets" ] && cp -r assets deploy/
+          cp *.css deploy/ 2>/dev/null || true
+          cp script.js deploy/ 2>/dev/null || true
+          cp secure-storage.js deploy/ 2>/dev/null || true
+          cp config-loader.js deploy/ 2>/dev/null || true
+          cp security-validator.js deploy/ 2>/dev/null || true
+          
+          # Create config directory and supabase.js
+          mkdir -p deploy/config
+          cp deploy/env-inject.js deploy/config/supabase.js
+          
+          # Create .htaccess for Hostinger
+          echo "📝 Creating .htaccess..."
+          cat > deploy/.htaccess << 'EOF'
+          # Force HTTPS
+          RewriteEngine On
+          RewriteCond %{HTTPS} off
+          RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+          
+          # Security Headers
+          <IfModule mod_headers.c>
+              Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://qnuznpihinvgzomddivo.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self';"
+              Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+              Header set X-Frame-Options "DENY"
+              Header set X-Content-Type-Options "nosniff"
+              Header set X-XSS-Protection "1; mode=block"
+              Header set Referrer-Policy "strict-origin-when-cross-origin"
+              Header set Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=(), usb=(), magnetometer=(), gyroscope=()"
+          </IfModule>
+          EOF
+
+      - name: Debug - List Files
+        run: |
+          echo "🔍 Contents of the deploy folder:"
+          ls -R deploy/
+
+      - name: Deploy to Branch for Hostinger (Primary Method)
+        uses: JamesIves/github-pages-deploy-action@v4.5.0
+        with:
+          branch: hostinger-build 
+          folder: deploy
+          commit-message: "Deploy production build for Hostinger"
+
+      - name: FTP Deploy to Hostinger (Fallback Method)
+        uses: SamKirkland/FTP-Deploy-Action@4.3.0
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: ./deploy/
+          server-dir: /public_html/
+          exclude: ""
