@@ -105,8 +105,8 @@ jobs:
           open ${{ secrets.FTP_SERVER }}
           user ${{ secrets.FTP_USERNAME }} ${{ secrets.FTP_PASSWORD }}
           
-          # Navigate to public_html directory
-          cd public_html
+          # Navigate to correct public_html directory
+          cd domains/tmjworld.ng/public_html
           
           # Upload all files from deploy directory
           mirror -R --delete --parallel=3 --verbose ./deploy/ ./
