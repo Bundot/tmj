@@ -89,11 +89,36 @@ jobs:
           commit-message: "Deploy production build for Hostinger"
 
       - name: FTP Deploy to Hostinger (Fallback Method)
-        uses: SamKirkland/FTP-Deploy-Action@4.3.0
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./deploy/
-          server-dir: /public_html/
-          exclude: ""
+        run: |
+          echo "🚀 Starting FTP deployment to Hostinger..."
+          
+          # Install lftp for more reliable FTP transfers
+          sudo apt-get update && sudo apt-get install -y lftp
+          
+          # Create FTP script
+          cat > ftp_script.sh << 'EOF'
+          set ftp:ssl-allow no
+          set ftp:passive-mode on
+          set ftp:list-options -a
+          set cmd:fail-exit true
+          
+          open ${{ secrets.FTP_SERVER }}
+          user ${{ secrets.FTP_USERNAME }} ${{ secrets.FTP_PASSWORD }}
+          
+          # Navigate to public_html directory
+          cd public_html
+          
+          # Upload all files from deploy directory
+          mirror -R --delete --parallel=3 --verbose ./deploy/ ./
+          
+          # Set proper permissions
+          chmod -R 755 ./
+          find ./ -type f -exec chmod 644 {} \;
+          
+          quit
+          EOF
+          
+          # Execute FTP script
+          lftp -f ftp_script.sh
+          
+          echo "✅ FTP deployment completed successfully!"
